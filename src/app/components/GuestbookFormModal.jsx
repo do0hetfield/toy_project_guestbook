@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useGuestbook } from "./guestbookStore";
+import { useGuestbook, HOUSES } from "./guestbookStore";
 
 export function GuestbookFormModal({ open, onClose }) {
     const { addEntry } = useGuestbook();
@@ -7,22 +7,32 @@ export function GuestbookFormModal({ open, onClose }) {
     const [author, setAuthor] = useState('');
     const [content, setContent] = useState('');
 
+    const [house, setHouse] = useState('Gryffindor'); 
+    const [password, setPassword] = useState('');
+
     if (!open) return null;
 
     const handleSubmit = (e) => {
         e.preventDefault();
 
+        if (!title.trim() || !author.trim() || !content.trim() || !password.trim()) {
+            alert("마법의 메시지가 부족합니다. 모든 항목을 입력해주세요!");
+            return;
+        }
+
         addEntry({
             title,
             author,
             content,
-            house: 'Gryffindor',
-            password: '0000'
+            house,
+            password
         });
 
         setTitle('');
         setAuthor('');
         setContent('');
+        setPassword('');
+        setHouse('Gryffindor');
         onClose();
     };
 
@@ -62,6 +72,41 @@ export function GuestbookFormModal({ open, onClose }) {
                             onChange={(e) => setContent(e.target.value)} 
                             placeholder="마법 같은 한 마디를 남겨주세요"
                         />
+                    </div>
+
+                    <div>
+                        <label className="block text-amber-900 mb-1 font-bold">비밀번호</label>
+                        <input 
+                            type="password" 
+                            className="w-full p-2 rounded bg-amber-50 border border-amber-200 text-amber-950 outline-none focus:border-amber-500"
+                            value={password} 
+                            onChange={(e) => setPassword(e.target.value)} 
+                            placeholder="나중에 글을 지울 때 사용할 비밀번호"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-amber-900 mb-1 font-bold">기숙사 선택</label>
+                        <div className="grid grid-cols-2 gap-2">
+                        {HOUSES.map((h) => {
+                            const active = house === h.name; 
+                            return (
+                            <button
+                                type="button"
+                                key={h.name}
+                                onClick={() => setHouse(h.name)} 
+                                className={`px-3 py-2 rounded-md border-2 transition-all font-bold`}
+                                style={{
+                                backgroundColor: active ? h.color : 'rgba(255,255,255,0.4)',
+                                borderColor: active ? h.accent : '#d97706',
+                                color: active ? h.accent : '#78350f',
+                                }}
+                            >
+                                {h.label}
+                            </button>
+                            );
+                        })}
+                        </div>
                     </div>
 
                     <div className="flex gap-3 mt-6 pt-4">
