@@ -72,6 +72,16 @@ export function useGuestbook() {
             persist(); 
             emit();    
             return true; 
+        },
+
+        updateEntry(id, password, updates) {
+            const target = entries.find((e) => e.id === id);
+            if (!target) return false;
+            if (target.password !== password) return false;
+            entries = entries.map((e) => (e.id === id ? { ...e, ...updates } : e));
+            persist();
+            emit();
+            return true;
         }
     }
 }

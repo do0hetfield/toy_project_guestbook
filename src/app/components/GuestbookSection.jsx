@@ -5,7 +5,7 @@ import { filter } from "motion/react-client";
 const ALL_HOUSES = [{ name: 'all', label: '전체'}, ...HOUSES];
 
 export function GuestbookSection() {
-    const { entries, deleteEntry } = useGuestbook();
+    const { entries, deleteEntry, updateEntry } = useGuestbook();
 
     const [houseFilter, setHouseFilter] = useState('all');
     const [sortOrder, setSortOrder] = useState('newest');
@@ -13,6 +13,48 @@ export function GuestbookSection() {
     const [deleteTarget, setDeleteTarget] = useState(null); 
     const [deletePw, setDeletePw] = useState('');           
     const [deleteError, setDeleteError] = useState('');
+
+    const [editTarget, setEditTarget] = useState(null); 
+    const [editStep, setEditStep] = useState('password'); 
+    const [editPw, setEditPw] = useState('');
+    const [editError, setEditError] = useState('');
+
+    const [editTitle, setEditTitle] = useState('');
+    const [editAuthor, setEditAuthor] = useState('');
+    const [editHouse, setEditHouse] = useState('Gryffindor');
+    const [editContent, setEditContent] = useState('');
+
+    const openEdit = (entry) => {
+        setEditTarget(entry);
+        setEditStep('password'); 
+        setEditPw('');
+        setEditError('');
+    };
+
+    const handleEditPasswordVerify = () => {
+        if (editTarget.password !== editPw) {
+        setEditError('비밀번호가 일치하지 않습니다.');
+        return;
+        }
+
+        setEditTitle(editTarget.title);
+        setEditAuthor(editTarget.author);
+        setEditContent(editTarget.content);
+        setEditHouse(editTarget.house || 'Gryffindor');
+        setEditStep('form'); 
+        setEditError('');
+    };
+
+    const handleEditSubmit = (e) => {
+        e.preventDefault();
+        updateEntry(editTarget.id, editPw, {
+        title: editTitle,
+        author: editAuthor,
+        content: editContent,
+        house: editHouse,
+        });
+        setEditTarget(null); 
+    };
 
     const handleDelete = () => {
     if (!deleteTarget) return;
@@ -128,6 +170,14 @@ export function GuestbookSection() {
                                         <span className="text-amber-900/60 text-sm">
                                         {new Date(entry.createdAt).toLocaleDateString()}
                                         </span>
+
+                                        <button
+                                        onClick={() => openEdit(entry)}
+                                        className="px-3 py-1 rounded-full border border-amber-700 text-amber-700 text-sm font-bold hover:bg-amber-700 hover:text-white transition-colors"
+                                        >
+                                        수정
+                                        </button>
+
                                         <button
                                         onClick={() => setDeleteTarget(entry)} 
                                         className="px-3 py-1 rounded-full border border-red-800 text-red-800 text-sm font-bold hover:bg-red-800 hover:text-white transition-colors"
@@ -186,6 +236,48 @@ export function GuestbookSection() {
                                 삭제
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {editTarget && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+                    <div className="bg-[#fef3c7] p-6 rounded-2xl w-full max-w-sm border-2 border-amber-500 shadow-2xl">
+                        {editStep === 'password' ? (
+                        <div>
+                            <h3 className="text-xl font-bold text-amber-900 mb-2">방명록 수정</h3>
+                            <p className="text-amber-800/80 text-sm mb-4">비밀번호를 입력해주세요.</p>
+                            <input
+                            type="password"
+                            value={editPw}
+                            onChange={(e) => setEditPw(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleEditPasswordVerify()}
+                            className="w-full p-2 rounded bg-amber-50 border border-amber-200 outline-none focus:border-amber-500 mb-2 text-amber-950"
+                            placeholder="비밀번호"
+                            />
+                            {editError && <p className="text-red-600 text-sm mb-3 font-bold">{editError}</p>}
+                            
+                            <div className="flex gap-2 mt-4">
+                            <button onClick={() => setEditTarget(null)} className="flex-1 py-2 rounded-full border-2 border-amber-800/40 text-amber-900 font-bold hover:bg-amber-100">취소</button>
+                            <button onClick={handleEditPasswordVerify} className="flex-1 py-2 rounded-full bg-amber-700 text-white font-bold hover:bg-amber-800">확인</button>
+                            </div>
+                        </div>
+                        ) : (
+                        
+                        <form onSubmit={handleEditSubmit} className="space-y-4">
+                            <h3 className="text-xl font-bold text-amber-900 text-center mb-4">내용 수정</h3>
+                            
+                            <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="w-full p-2 rounded bg-amber-50 border border-amber-200 text-amber-950" placeholder="제목" />
+                            <input value={editAuthor} onChange={(e) => setEditAuthor(e.target.value)} className="w-full p-2 rounded bg-amber-50 border border-amber-200 text-amber-950" placeholder="작성자" />
+                            <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows="3" className="w-full p-2 rounded bg-amber-50 border border-amber-200 text-amber-950" placeholder="내용" />
+                            
+                            {/* 폼 하단 버튼 */}
+                            <div className="flex gap-2 mt-4">
+                            <button type="button" onClick={() => setEditTarget(null)} className="flex-1 py-2 rounded-full border-2 border-amber-800/40 text-amber-900 font-bold hover:bg-amber-100">취소</button>
+                            <button type="submit" className="flex-1 py-2 rounded-full bg-amber-700 text-white font-bold hover:bg-amber-800">저장</button>
+                            </div>
+                        </form>
+                        )}
                     </div>
                 </div>
             )}
