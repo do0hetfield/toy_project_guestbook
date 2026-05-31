@@ -62,6 +62,16 @@ export function useGuestbook() {
             entries = [newEntry, ...entries];
             persist();
             emit();
+        },
+
+        deleteEntry(id, password) {
+            const target = entries.find((e) => e.id === id);
+            if (!target) return false;
+            if (target.password !== password) return false;
+            entries = entries.filter((e) => e.id !== id);
+            persist(); 
+            emit();    
+            return true; 
         }
     }
 }

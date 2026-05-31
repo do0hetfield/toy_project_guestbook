@@ -5,10 +5,28 @@ import { filter } from "motion/react-client";
 const ALL_HOUSES = [{ name: 'all', label: '전체'}, ...HOUSES];
 
 export function GuestbookSection() {
-    const { entries } = useGuestbook();
+    const { entries, deleteEntry } = useGuestbook();
 
     const [houseFilter, setHouseFilter] = useState('all');
     const [sortOrder, setSortOrder] = useState('newest');
+
+    const [deleteTarget, setDeleteTarget] = useState(null); 
+    const [deletePw, setDeletePw] = useState('');           
+    const [deleteError, setDeleteError] = useState('');
+
+    const handleDelete = () => {
+    if (!deleteTarget) return;
+    
+    const isSuccess = deleteEntry(deleteTarget.id, deletePw);
+    
+    if (isSuccess) {
+      setDeleteTarget(null);
+      setDeletePw('');
+      setDeleteError('');
+    } else {
+      setDeleteError('비밀번호가 일치하지 않습니다.');
+    }
+  };
 
     let filteredEntries = [...entries];
     
@@ -105,9 +123,18 @@ export function GuestbookSection() {
                                     >
                                         {house ? house.label : '기숙사 없음'}
                                     </span>
-                                    <span className="text-amber-900/60 text-sm">
+
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-amber-900/60 text-sm">
                                         {new Date(entry.createdAt).toLocaleDateString()}
-                                    </span>
+                                        </span>
+                                        <button
+                                        onClick={() => setDeleteTarget(entry)} 
+                                        className="px-3 py-1 rounded-full border border-red-800 text-red-800 text-sm font-bold hover:bg-red-800 hover:text-white transition-colors"
+                                        >
+                                        삭제
+                                        </button>
+                                    </div>
                                 </div>
                                 
                                 <h3 className="text-2xl text-amber-950 mb-1 font-bold">{entry.title}</h3>
@@ -119,6 +146,49 @@ export function GuestbookSection() {
                 </div>
 
             </div>
+
+            {deleteTarget && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+                    <div className="bg-[#fef3c7] p-6 rounded-2xl w-full max-w-sm border-2 border-red-800 shadow-2xl">
+                        <h3 className="text-xl font-bold text-red-900 mb-2">방명록 삭제</h3>
+                        <p className="text-red-800/80 text-sm mb-4">
+                        작성 시 설정한 비밀번호를 입력해주세요.
+                        </p>
+                        
+                        <input
+                            type="password"
+                            value={deletePw}
+                            onChange={(e) => setDeletePw(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleDelete()}
+                            className="w-full p-2 rounded bg-amber-50 border border-red-200 outline-none focus:border-red-500 mb-2 text-red-900"
+                            placeholder="비밀번호"
+                        />
+                        
+                        {deleteError && (
+                        <p className="text-red-600 text-sm mb-3 font-bold">{deleteError}</p>
+                        )}
+                        
+                        <div className="flex gap-2 mt-4">
+                            <button
+                                onClick={() => {
+                                setDeleteTarget(null); 
+                                setDeletePw('');
+                                setDeleteError('');
+                                }}
+                                className="flex-1 py-2 rounded-full border-2 border-red-800/40 text-red-900 font-bold hover:bg-red-100"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleDelete}
+                                className="flex-1 py-2 rounded-full bg-red-800 text-white font-bold hover:bg-red-900"
+                            >
+                                삭제
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </section>
     );
 }
