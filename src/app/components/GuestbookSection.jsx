@@ -31,35 +31,42 @@ export function GuestbookSection() {
         setEditError('');
     };
 
-    const handleEditPasswordVerify = () => {
-        if (editTarget.password !== editPw) {
-        setEditError('비밀번호가 일치하지 않습니다.');
-        return;
+    const handleEditPasswordVerify = async () => {
+        if (!editPw.trim()) {
+            setEditError('비밀번호를 입력해주세요.');
+            return;
         }
 
-        setEditTitle(editTarget.title);
-        setEditAuthor(editTarget.author);
-        setEditContent(editTarget.content);
-        setEditHouse(editTarget.house || 'Gryffindor');
-        setEditStep('form'); 
-        setEditError('');
+        const isSuccess = await updateEntry(editTarget.id, editPw, {});
+
+        if (isSuccess) {
+            setEditTitle(editTarget.title);
+            setEditAuthor(editTarget.writer);
+            setEditContent(editTarget.content);
+            setEditHouse(editTarget.house || 'Gryffindor');
+
+            setEditStep('form'); 
+            setEditError('');
+        } else {
+            setEditError('비밀번호가 일치하지 않습니다.');
+        }
     };
 
-    const handleEditSubmit = (e) => {
+    const handleEditSubmit = async (e) => {
         e.preventDefault();
-        updateEntry(editTarget.id, editPw, {
+        const isSuccess = await updateEntry(editTarget.id, editPw, {
         title: editTitle,
-        author: editAuthor,
+        writer: editAuthor,
         content: editContent,
         house: editHouse,
         });
         setEditTarget(null); 
     };
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
     if (!deleteTarget) return;
     
-    const isSuccess = deleteEntry(deleteTarget.id, deletePw);
+    const isSuccess = await deleteEntry(deleteTarget.id, deletePw);
     
     if (isSuccess) {
       setDeleteTarget(null);
@@ -78,8 +85,8 @@ export function GuestbookSection() {
 
     filteredEntries.sort((a, b) => {
         return sortOrder === 'newest'
-        ? b.createdAt - a.createdAt 
-        : a.createdAt - b.createdAt;
+        ? new Date(b.created_at) - new Date(a.created_at)
+        : new Date(a.created_at) - new Date(b.created_at);
     })
 
     return (
@@ -168,7 +175,7 @@ export function GuestbookSection() {
 
                                     <div className="flex items-center gap-3">
                                         <span className="text-amber-900/60 text-sm">
-                                        {new Date(entry.createdAt).toLocaleDateString()}
+                                        {new Date(entry.created_at).toLocaleString()}
                                         </span>
 
                                         <button
@@ -188,7 +195,7 @@ export function GuestbookSection() {
                                 </div>
                                 
                                 <h3 className="text-2xl text-amber-950 mb-1 font-bold">{entry.title}</h3>
-                                <p className="text-amber-900/80 italic mb-3">- {entry.author}</p>
+                                <p className="text-amber-900/80 italic mb-3">- {entry.writer}</p>
                                 <p className="text-amber-950/90 whitespace-pre-wrap">{entry.content}</p>
                             </article>
                         );

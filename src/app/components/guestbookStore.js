@@ -1,18 +1,9 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
 
-const STORAGE_KEY = 'magical-guestbook-entries'
-
-const seed = [
-    {
-        id: 'seed-1',
-        title: '호그와트에 오신 것을 환영합니다',
-        author: '알버스 덤블도어',
-        content: '행복은 가장 어두운 시기에도 찾을 수 있단다.',
-        password: '0000',
-        house: 'Gryffindor',
-        createAt: Date.now(),
-    }
-];
+const api = axios.create({
+    baseURL: 'http://13.209.52.128:8000/',
+})
 
 export const HOUSES = [
     { name: 'Gryffindor', label: '그리핀도르', color: '#7f1d1d', accent: '#fbbf24' },
@@ -21,67 +12,63 @@ export const HOUSES = [
     { name: 'Hufflepuff', label: '후플푸프', color: '#78350f', accent: '#fde68a' },
 ];
 
+let globalEntries = [];
 const listeners = new Set();
-let entries = load();
 
-function load() {
+const emit = () => listeners.forEach((l) => l());
+
+const fetchEntries = async () => {
     try {
-        const raw = window.localStorage.getItem(STORAGE_KEY);
-        if (!raw) return seed;
-        return JSON.parse(raw);
-    } catch {
-        return seed;
+        const response = await api.get('/guestbooks/');
+        globalEntries = response.data; 
+        emit(); 
+    } catch (error) {
+        console.error("데이터 불러오기 실패:", error);
     }
-}
+};
 
-function persist() {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-}
-
-function emit() {
-    listeners.forEach((l) => l());
-}
-
-export function useGuestbook() {
+fetchEntries();
+    export function useGuestbook() {
     const [, setTick] = useState(0);
-
     useEffect(() => {
         const listener = () => setTick((t) => t + 1);
         listeners.add(listener);
         return () => listeners.delete(listener);
     }, []);
-
     return {
-        entries,
-        addEntry(entry) {
-            const newEntry = {
-                ...entry,
-                id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                createdAt: Date.now(),
-            };
-            entries = [newEntry, ...entries];
-            persist();
-            emit();
-        },
-
-        deleteEntry(id, password) {
-            const target = entries.find((e) => e.id === id);
-            if (!target) return false;
-            if (target.password !== password) return false;
-            entries = entries.filter((e) => e.id !== id);
-            persist(); 
-            emit();    
-            return true; 
-        },
-
-        updateEntry(id, password, updates) {
-            const target = entries.find((e) => e.id === id);
-            if (!target) return false;
-            if (target.password !== password) return false;
-            entries = entries.map((e) => (e.id === id ? { ...e, ...updates } : e));
-            persist();
-            emit();
+        entries: globalEntries, 
+        
+        async addEntry(entry) {
+        try {
+            await api.post('/guestbooks/', entry); 
+            await fetchEntries(); 
             return true;
+        } catch (error) {
+            return false;
         }
-    }
+        },
+        async deleteEntry(id, password) {
+        try {
+            await api.delete(`/guestbooks/${id}/`, { data: { password: password } });
+            await fetchEntries();
+            return true;
+        } catch (error) {
+            return false;
+        }
+        },
+
+        async updateEntry(id, password, updates) {
+        try {
+            await api.patch(`/guestbooks/${id}/`, {
+            password: password, 
+            ...updates          
+            });
+            await fetchEntries();
+            return true;
+        } catch (error) {
+            console.error("수정 실패:", error);
+            return false;
+        }
+        }
+    };
 }

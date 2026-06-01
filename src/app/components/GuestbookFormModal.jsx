@@ -12,7 +12,7 @@ export function GuestbookFormModal({ open, onClose }) {
 
     if (!open) return null;
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!title.trim() || !author.trim() || !content.trim() || !password.trim()) {
@@ -20,20 +20,22 @@ export function GuestbookFormModal({ open, onClose }) {
             return;
         }
 
-        addEntry({
-            title,
-            author,
-            content,
-            house,
-            password
+        const isSuccess = await addEntry({
+            title: title,
+            writer: author,
+            content: content,
+            house: house,
+            pw: password
         });
-
-        setTitle('');
-        setAuthor('');
-        setContent('');
-        setPassword('');
-        setHouse('Gryffindor');
-        onClose();
+        
+        if (isSuccess) {
+            setTitle('');
+            setAuthor('');
+            setContent('');
+            setPassword('');
+            setHouse('Gryffindor');
+            onClose();
+        }
     };
 
     return (
